@@ -13,6 +13,34 @@ example-input datasets, and the generated output as rosbag or .ply point cloud.
 
 * **Semi-Dense Visual Odometry for a Monocular Camera**, *J. Engel, J. Sturm, D. Cremers*, ICCV '13
 
+# IMPORTANT - Instruction to run on Ubuntu 16.04 and ros kinetic
+I modifed code and incoporate the changes here: (link)[https://github.com/kevin-george/lsd_slam/issues/1]
+First install ros kinetic.
+Then:
+```
+sudo apt install libsuitesparse-dev libqglviewer-dev-qt4 ros-kinetic-libg2o  ros-kinetic-opencv3
+sudo ln -s /usr/lib/x86_64-linux-gnu/libQGLViewer-qt4.so /usr/lib/x86_64-linux-gnu/libQGLViewer.so  
+
+mkdir -p ros_workspace/src
+cd ros_workspace/src
+git clone https://github.com/dknyxh/lsd_slam.git lsd_slam  
+cd ..
+catkin_make
+```
+To test the example bag:
+First download the bag file:
+```
+cd ~
+curl http://vmcremers8.informatik.tu-muenchen.de/lsd/LSD_room.bag.zip --output  LSD_room.bag.zip 
+unzip LSD_room.bag.zip 
+```
+Then
+```
+cd ros_workspace
+source devel/setup.bash
+roscore > /dev/null & rosrun lsd_slam_viewer viewer & bg
+rosrun lsd_slam_core live_slam image:=/image_raw camera_info:=/camera_info & rosbag play ~/LSD_room.bag
+```
 
 
 # 1. Quickstart / Minimal Setup
