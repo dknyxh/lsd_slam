@@ -48,7 +48,7 @@ source devel/setup.bash
 roscore > /dev/null & rosrun lsd_slam_viewer viewer & bg
 rosrun lsd_slam_core dataset _files:=<absolute path to rgb folder> _hz:=30 _calib:=<path to calibration file>
 ```
-For dynamic scene, we want to test out this dynmaic sequence: Sequence 'freiburg3_sitting_halfsphere' on https://vision.in.tum.de/data/datasets/rgbd-dataset/download
+For dynamic scene, we want to test out this dynmaic sequence: Sequence 'freiburg3_sitting_halfsphere' on https://vision.in.tum.de/data/datasets/rgbd-dataset/download, the corresponding calibration file is `TUM_calib/fr3_calib.txt`.
 
 # 1. Quickstart / Minimal Setup
 
