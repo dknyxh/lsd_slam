@@ -110,6 +110,7 @@ void TrackingReference::makePointCloud(int level)
 	float cyInvLevel = keyframe->cyInv(level);
 
 	const float* pyrIdepthSource = keyframe->idepth(level);
+	const float* pyrMaskSource = keyframe->mask(level); //chenfeng
 	const float* pyrIdepthVarSource = keyframe->idepthVar(level);
 	const float* pyrColorSource = keyframe->image(level);
 	const Eigen::Vector4f* pyrGradSource = keyframe->gradients(level);
@@ -130,7 +131,7 @@ void TrackingReference::makePointCloud(int level)
 		{
 			int idx = x + y*w;
 
-			if(pyrIdepthVarSource[idx] <= 0 || pyrIdepthSource[idx] == 0) continue;
+			if(pyrIdepthVarSource[idx] <= 0 || pyrIdepthSource[idx] == 0 || pyrMaskSource[idx] == 0) continue; // chenfeng, 0 represents dynamic objects
 
 			*posDataPT = (1.0f / pyrIdepthSource[idx]) * Eigen::Vector3f(fxInvLevel*x+cxInvLevel,fyInvLevel*y+cyInvLevel,1);
 			*gradDataPT = pyrGradSource[idx].head<2>();

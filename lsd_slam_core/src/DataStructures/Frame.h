@@ -104,6 +104,7 @@ public:
 	inline double timestamp() const;
 	
 	inline float* image(int level = 0);
+	inline float* mask(int level = 0); //chenfeng
 	inline const Eigen::Vector4f* gradients(int level = 0);
 	inline const float* maxGradients(int level = 0);
 	inline bool hasIDepthBeenSet() const;
@@ -127,8 +128,9 @@ public:
 		IDEPTH			= 1<<3,
 		IDEPTH_VAR		= 1<<4,
 		REF_ID			= 1<<5,
+		MASK            = 1<<6,  // chenfeng
 		
-		ALL = IMAGE | GRADIENTS | MAX_GRADIENTS | IDEPTH | IDEPTH_VAR | REF_ID
+		ALL = IMAGE | GRADIENTS | MAX_GRADIENTS | IDEPTH | IDEPTH_VAR | REF_ID | MASK  // chenfeng
 	};
 	
 
@@ -247,6 +249,9 @@ private:
 		
 		float* image[PYRAMID_LEVELS];
 		bool imageValid[PYRAMID_LEVELS];
+
+		float* mask[PYRAMID_LEVELS];  // chenfeng
+		bool maskValid[PYRAMID_LEVELS]; // chenfeng
 		
 		Eigen::Vector4f* gradients[PYRAMID_LEVELS];
 		bool gradientsValid[PYRAMID_LEVELS];
@@ -363,6 +368,12 @@ inline float* Frame::image(int level)
 	if (! data.imageValid[level])
 		require(IMAGE, level);
 	return data.image[level];
+}
+inline float* Frame::mask(int level)
+{
+	if (! data.maskValid[level])
+		require(MASK, level);
+	return data.mask[level];
 }
 inline const Eigen::Vector4f* Frame::gradients(int level)
 {

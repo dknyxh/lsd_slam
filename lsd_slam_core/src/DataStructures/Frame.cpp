@@ -67,12 +67,34 @@ Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double tim
 		printf("ALLOCATED frame %d, now there are %d\n", this->id(), privateFrameAllocCount);
 }
 
-Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const unsigned char* image, const unsigned char* mask){
-	//TO-DO
+Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const unsigned char* image, const unsigned char* mask){ // chenfeng
+	initialize(id, width, height, K, timestamp);
+	
+	data.image[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
+	memcpy(data.image[0], image, data.width[0]*data.height[0] * sizeof(float));
+	data.mask[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
+	memcpy(data.mask[0], mask, data.width[0]*data.height[0] * sizeof(float));
+	data.imageValid[0] = true;
+
+	privateFrameAllocCount++;
+
+	if(enablePrintDebugInfo && printMemoryDebugInfo)
+		printf("ALLOCATED frame %d, now there are %d\n", this->id(), privateFrameAllocCount);
 }
 
-Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const float* image, const float* mask){
-	//TO-DO
+Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const float* image, const float* mask){  // chenfeng
+	initialize(id, width, height, K, timestamp);
+	
+	data.image[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
+	memcpy(data.image[0], image, data.width[0]*data.height[0] * sizeof(float));
+	data.mask[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
+	memcpy(data.mask[0], mask, data.width[0]*data.height[0] * sizeof(float));
+	data.imageValid[0] = true;
+
+	privateFrameAllocCount++;
+
+	if(enablePrintDebugInfo && printMemoryDebugInfo)
+		printf("ALLOCATED frame %d, now there are %d\n", this->id(), privateFrameAllocCount);
 }
 
 
@@ -92,6 +114,7 @@ Frame::~Frame()
 	for (int level = 0; level < PYRAMID_LEVELS; ++ level)
 	{
 		FrameMemory::getInstance().returnBuffer(data.image[level]);
+		FrameMemory::getInstance().returnBuffer(data.mask[level]);
 		FrameMemory::getInstance().returnBuffer(reinterpret_cast<float*>(data.gradients[level]));
 		FrameMemory::getInstance().returnBuffer(data.maxGradients[level]);
 		FrameMemory::getInstance().returnBuffer(data.idepth[level]);
@@ -443,6 +466,7 @@ void Frame::initialize(int id, int width, int height, const Eigen::Matrix3f& K, 
 		data.idepthVarValid[level] = false;
 
 		data.image[level] = 0;
+		data.mask[level] = 0;
 		data.gradients[level] = 0;
 		data.maxGradients[level] = 0;
 		data.idepth[level] = 0;
@@ -518,6 +542,7 @@ void Frame::buildImage(int level)
 	int height = data.height[level - 1];
 	const float* source = data.image[level - 1];
 
+	// TODO chenfeng
 	if (data.image[level] == 0)
 		data.image[level] = FrameMemory::getInstance().getFloatBuffer(data.width[level] * data.height[level]);
 	float* dest = data.image[level];
@@ -647,6 +672,9 @@ void Frame::releaseImage(int level)
 	}
 	FrameMemory::getInstance().returnBuffer(data.image[level]);
 	data.image[level] = 0;
+	FrameMemory::getInstance().returnBuffer(data.mask[level]);
+	data.mask[level] = 0;
+
 }
 
 void Frame::buildGradients(int level)

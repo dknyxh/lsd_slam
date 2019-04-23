@@ -111,7 +111,8 @@ target_link_libraries(live_slam lsdslam ${catkin_LIBRARIES} ${G2O_LIBRARIES})
 
 
 # build image node
-add_executable(dataset src/main_on_images.cpp)
+# add_executable(dataset src/main_on_images.cpp)
+add_executable(dataset src/main_on_images_masks.cpp)  # chenfeng
 add_dependencies(lsdslam lsd_slam_viewer_generate_messages_cpp)
 add_dependencies(live_slam lsd_slam_viewer_generate_messages_cpp)
 add_dependencies(dataset lsd_slam_viewer_generate_messages_cpp)

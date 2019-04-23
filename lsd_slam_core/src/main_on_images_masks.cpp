@@ -203,22 +203,22 @@ int main( int argc, char** argv )
 	}
 
 	// open mask files: first try to open as file
-	std::string mask;
+	std::string mask_source;
 	std::vector<std::string> mask_files;
-	if(!ros::param::get("~masks", mask))
+	if(!ros::param::get("~masks", mask_source))
 	{
 		printf("need mask files! (set using _mask:=FOLDER)\n");
 		exit(0);
 	}
 	ros::param::del("~masks");
 
-	if(getdir(mask, mask_files) >= 0)
+	if(getdir(mask_source, mask_files) >= 0)
 	{
-		printf("found %d mask files in folder %s!\n", (int)mask_files.size(), mask.c_str());
+		printf("found %d mask files in folder %s!\n", (int)mask_files.size(), mask_source.c_str());
 	}
-	else if(getFile(mask, mask_files) >= 0)
+	else if(getFile(mask_source, mask_files) >= 0)
 	{
-		printf("found %d mask files in file %s!\n", (int)mask_files.size(), mask.c_str());
+		printf("found %d mask files in file %s!\n", (int)mask_files.size(), mask_source.c_str());
 	}
 	else
 	{
@@ -236,6 +236,7 @@ int main( int argc, char** argv )
 
 
 	cv::Mat image = cv::Mat(h,w,CV_8U);
+	cv::Mat mask = cv::Mat(h,w,CV_8U); // chenfeng
 	int runningIDX=0;
 	float fakeTimeStamp = 0;
 
@@ -266,17 +267,22 @@ int main( int argc, char** argv )
 			continue;
 		}
 		assert(imageDist.type() == CV_8U);
+		assert(maskDist.type() == CV_8U);
 
 		undistorter->undistort(imageDist, image);
+		undistorter->undistort(maskDist, mask);
+
 		assert(image.type() == CV_8U);
+		assert(mask.type() == CV_8U);
 
 		if(runningIDX == 0){
 			system->randomInit(image.data, fakeTimeStamp, runningIDX);
+			// TODO-------- should mask do the same thing?
 		}
 		else{
 			//Here we need to use another function
-			// system->trackFrame(image.data, mask.data, runningIDX ,hz == 0,fakeTimeStamp);
-			system->trackFrame(image.data, runningIDX ,hz == 0,fakeTimeStamp);
+			system->trackFrame(image.data, mask.data, runningIDX ,hz == 0,fakeTimeStamp);
+			// system->trackFrame(image.data, runningIDX ,hz == 0,fakeTimeStamp);
 		}
 		runningIDX++;
 		fakeTimeStamp+=0.03;

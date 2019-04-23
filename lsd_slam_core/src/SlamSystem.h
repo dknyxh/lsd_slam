@@ -83,6 +83,7 @@ public:
 	// returns camToWord transformation of the tracked frame.
 	// frameID needs to be monotonically increasing.
 	void trackFrame(uchar* image, unsigned int frameID, bool blockUntilMapped, double timestamp);
+	void trackFrame(uchar* image, uchar* mask, unsigned int frameID, bool blockUntilMapped, double timestamp); // chenfeng: new interface
 
 	// finalizes the system, i.e. blocks and does all remaining loop-closures etc.
 	void finalize();
