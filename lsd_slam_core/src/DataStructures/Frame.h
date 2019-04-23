@@ -221,6 +221,9 @@ private:
 	
 	void buildImage(int level);
 	void releaseImage(int level);
+
+	void buildMask(int level);
+	void releaseMask(int level);
 	
 	void buildGradients(int level);
 	void releaseGradients(int level);

@@ -51,7 +51,7 @@ catkin_package(
 
 # SSE flags
 add_definitions("-DUSE_ROS")
-add_definitions("-DENABLE_SSE")
+# add_definitions("-DENABLE_SSE")
 
 # Also add some useful compiler flag
 set(CMAKE_CXX_FLAGS

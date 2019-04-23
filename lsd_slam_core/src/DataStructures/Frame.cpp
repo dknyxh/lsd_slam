@@ -71,10 +71,25 @@ Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double tim
 	initialize(id, width, height, K, timestamp);
 	
 	data.image[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
-	memcpy(data.image[0], image, data.width[0]*data.height[0] * sizeof(float));
+	float* maxPt = data.image[0] + data.width[0]*data.height[0];
+
+	for(float* pt = data.image[0]; pt < maxPt; pt++)
+	{
+		*pt = *image;
+		image++;
+	}
+
 	data.mask[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
-	memcpy(data.mask[0], mask, data.width[0]*data.height[0] * sizeof(float));
+	float* maxMaskPt = data.mask[0] + data.width[0]*data.height[0];
+
+	for(float* pt = data.mask[0]; pt < maxMaskPt; pt++)
+	{
+		*pt = *mask;
+		mask++;
+	}
+
 	data.imageValid[0] = true;
+	data.maskValid[0] = true;
 
 	privateFrameAllocCount++;
 
@@ -90,6 +105,7 @@ Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double tim
 	data.mask[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
 	memcpy(data.mask[0], mask, data.width[0]*data.height[0] * sizeof(float));
 	data.imageValid[0] = true;
+	data.maskValid[0] = true;
 
 	privateFrameAllocCount++;
 
@@ -354,6 +370,10 @@ void Frame::require(int dataFlags, int level)
 	{
 		buildImage(level);
 	}
+	if ((dataFlags & MASK) && ! data.maskValid[level])
+	{
+		buildMask(level);
+	}
 	if ((dataFlags & GRADIENTS) && ! data.gradientsValid[level])
 	{
 		buildGradients(level);
@@ -378,6 +398,12 @@ void Frame::release(int dataFlags, bool pyramidsOnly, bool invalidateOnly)
 			data.imageValid[level] = false;
 			if(!invalidateOnly)
 				releaseImage(level);
+		}
+		if ((dataFlags & MASK) && data.maskValid[level])
+		{
+			data.maskValid[level] = false;
+			if(!invalidateOnly)
+				releaseMask(level);
 		}
 		if ((dataFlags & GRADIENTS) && data.gradientsValid[level])
 		{
@@ -414,7 +440,7 @@ bool Frame::minimizeInMemory()
 		if(enablePrintDebugInfo && printMemoryDebugInfo)
 			printf("minimizing frame %d\n",id());
 
-		release(IMAGE | IDEPTH | IDEPTH_VAR, true, false);
+		release(IMAGE | IDEPTH | IDEPTH_VAR | MASK, true, false);
 		release(GRADIENTS | MAX_GRADIENTS, false, false);
 
 		clear_refPixelWasGood();
@@ -460,6 +486,7 @@ void Frame::initialize(int id, int width, int height, const Eigen::Matrix3f& K, 
 		data.height[level] = height >> level;
 
 		data.imageValid[level] = false;
+		data.maskValid[level] = false;
 		data.gradientsValid[level] = false;
 		data.maxGradientsValid[level] = false;
 		data.idepthValid[level] = false;
@@ -519,6 +546,49 @@ void Frame::initialize(int id, int width, int height, const Eigen::Matrix3f& K, 
 void Frame::setDepth_Allocate()
 {
 	return;
+}
+
+void Frame::buildMask(int level)
+{
+	if (level == 0)
+	{
+		printf("Frame::buildMask(0): Loading mask from disk is not implemented yet! No-op.\n");
+		return;
+	}
+	
+	require(MASK, level - 1);
+	boost::unique_lock<boost::mutex> lock2(buildMutex);
+
+	if(data.maskValid[level])
+		return;
+
+	if(enablePrintDebugInfo && printFrameBuildDebugInfo)
+		printf("CREATE mask lvl %d for frame %d\n", level, id());
+
+	int width = data.width[level - 1];
+	int height = data.height[level - 1];
+	const float* source = data.mask[level - 1];
+
+	if (data.mask[level] == 0)
+		data.mask[level] = FrameMemory::getInstance().getFloatBuffer(data.width[level] * data.height[level]);
+	float* dest = data.mask[level];
+
+	int wh = width*height;
+	const float* s;
+	for(int y=0;y<wh;y+=width*2)
+	{
+		for(int x=0;x<width;x+=2)
+		{
+			s = source + x + y;
+			*dest = (s[0] +
+					s[1] +
+					s[width] +
+					s[1+width]) * 0.25f;
+			dest++;
+		}
+	}
+
+	data.maskValid[level] = true;
 }
 
 void Frame::buildImage(int level)
@@ -672,10 +742,20 @@ void Frame::releaseImage(int level)
 	}
 	FrameMemory::getInstance().returnBuffer(data.image[level]);
 	data.image[level] = 0;
+}
+
+void Frame::releaseMask(int level)
+{
+	if (level == 0)
+	{
+		printf("Frame::releaseMask(0): Storing image on disk is not supported yet! No-op.\n");
+		return;
+	}
 	FrameMemory::getInstance().returnBuffer(data.mask[level]);
 	data.mask[level] = 0;
 
 }
+
 
 void Frame::buildGradients(int level)
 {
