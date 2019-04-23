@@ -189,7 +189,6 @@ int main( int argc, char** argv )
 	}
 	ros::param::del("~files");
 
-
 	if(getdir(source, files) >= 0)
 	{
 		printf("found %d image files in folder %s!\n", (int)files.size(), source.c_str());
@@ -197,6 +196,29 @@ int main( int argc, char** argv )
 	else if(getFile(source, files) >= 0)
 	{
 		printf("found %d image files in file %s!\n", (int)files.size(), source.c_str());
+	}
+	else
+	{
+		printf("could not load file list! wrong path / file?\n");
+	}
+
+	// open mask files: first try to open as file
+	std::string mask;
+	std::vector<std::string> mask_files;
+	if(!ros::param::get("~masks", mask))
+	{
+		printf("need mask files! (set using _mask:=FOLDER)\n");
+		exit(0);
+	}
+	ros::param::del("~masks");
+
+	if(getdir(mask, mask_files) >= 0)
+	{
+		printf("found %d mask files in folder %s!\n", (int)mask_files.size(), mask.c_str());
+	}
+	else if(getFile(mask, mask_files) >= 0)
+	{
+		printf("found %d mask files in file %s!\n", (int)mask_files.size(), mask.c_str());
 	}
 	else
 	{
@@ -222,8 +244,11 @@ int main( int argc, char** argv )
 	for(unsigned int i=0;i<files.size();i++)
 	{
 		cv::Mat imageDist = cv::imread(files[i], CV_LOAD_IMAGE_GRAYSCALE);
+		cv::Mat maskDist = cv::imread(mask_files[i], CV_LOAD_IMAGE_GRAYSCALE);
 
-		if(imageDist.rows != h_inp || imageDist.cols != w_inp)
+
+		if(imageDist.rows != h_inp || imageDist.cols != w_inp ||
+			maskDist.rows != h_inp ||  maskDist.cols != w_inp)
 		{
 			if(imageDist.rows * imageDist.cols == 0)
 				printf("failed to load image %s! skipping.\n", files[i].c_str());
@@ -231,6 +256,13 @@ int main( int argc, char** argv )
 				printf("image %s has wrong dimensions - expecting %d x %d, found %d x %d. Skipping.\n",
 						files[i].c_str(),
 						w,h,imageDist.cols, imageDist.rows);
+
+			if(maskDist.rows * maskDist.cols == 0)
+				printf("failed to load mask %s! skipping.\n", mask_files[i].c_str());
+			else
+				printf("mask %s has wrong dimensions - expecting %d x %d, found %d x %d. Skipping.\n",
+						mask_files[i].c_str(),
+						w,h,maskDist.cols, maskDist.rows);
 			continue;
 		}
 		assert(imageDist.type() == CV_8U);
@@ -238,10 +270,14 @@ int main( int argc, char** argv )
 		undistorter->undistort(imageDist, image);
 		assert(image.type() == CV_8U);
 
-		if(runningIDX == 0)
+		if(runningIDX == 0){
 			system->randomInit(image.data, fakeTimeStamp, runningIDX);
-		else
+		}
+		else{
+			//Here we need to use another function
+			//system->trackFrame(image.data, mask.data, runningIDX ,hz == 0,fakeTimeStamp);
 			system->trackFrame(image.data, runningIDX ,hz == 0,fakeTimeStamp);
+		}
 		runningIDX++;
 		fakeTimeStamp+=0.03;
 
