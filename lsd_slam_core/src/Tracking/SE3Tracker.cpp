@@ -941,7 +941,7 @@ float SE3Tracker::calcResidualAndBuffers(
 		// step 1a: coordinates have to be in image:
 		// (inverse test to exclude NANs)
 		if(!(u_new > 1 && v_new > 1 && u_new < w-2 && v_new < h-2 && 
-			frame->mask(level)[int(u_new) + w * int(v_new)] < 255/2.0))   // chenfeng: revised to include mask from current frame mask
+			frame->mask(level)[int(u_new) + w * int(v_new)] == 0))   // chenfeng: revised to include mask from current frame mask
 		{
 			if(isGoodOutBuffer != 0)
 				isGoodOutBuffer[*idxBuf] = false;

@@ -130,7 +130,7 @@ void TrackingReference::makePointCloud(int level)
 		for(int y=1; y<h-1; y++)
 		{
 			int idx = x + y*w;
-			if(pyrIdepthVarSource[idx] <= 0 || pyrIdepthSource[idx] == 0 || pyrMaskSource[idx] >= 255/2.0) continue; // chenfeng, 0 represents dynamic objects
+			if(pyrIdepthVarSource[idx] <= 0 || pyrIdepthSource[idx] == 0 || pyrMaskSource[idx] == 255) continue; // chenfeng, 0 represents dynamic objects
 
 			*posDataPT = (1.0f / pyrIdepthSource[idx]) * Eigen::Vector3f(fxInvLevel*x+cxInvLevel,fyInvLevel*y+cyInvLevel,1);
 			*gradDataPT = pyrGradSource[idx].head<2>();
