@@ -74,6 +74,7 @@ public:
 	~SlamSystem();
 
 	void randomInit(uchar* image, double timeStamp, int id);
+	void randomInit(uchar* image, uchar* mask, double timeStamp, int id);
 	void gtDepthInit(uchar* image, float* depth, double timeStamp, int id);
 
 	

@@ -276,7 +276,7 @@ int main( int argc, char** argv )
 		assert(mask.type() == CV_8U);
 
 		if(runningIDX == 0){
-			system->randomInit(image.data, fakeTimeStamp, runningIDX);
+			system->randomInit(image.data, mask.data, fakeTimeStamp, runningIDX);
 			// TODO-------- should mask do the same thing?
 		}
 		else{
