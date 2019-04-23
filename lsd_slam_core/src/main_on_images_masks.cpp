@@ -275,7 +275,7 @@ int main( int argc, char** argv )
 		}
 		else{
 			//Here we need to use another function
-			//system->trackFrame(image.data, mask.data, runningIDX ,hz == 0,fakeTimeStamp);
+			// system->trackFrame(image.data, mask.data, runningIDX ,hz == 0,fakeTimeStamp);
 			system->trackFrame(image.data, runningIDX ,hz == 0,fakeTimeStamp);
 		}
 		runningIDX++;
