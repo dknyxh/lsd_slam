@@ -51,6 +51,11 @@ public:
 	 */
 	inline NotifyBuffer<TimestampedMat>* getBuffer() {return imageBuffer;};
 
+	/**
+	 * Gets the NotifyBuffer to which incoming images are stored.
+	 */
+	inline NotifyBuffer<TimestampedMat>* getMaskBuffer() {return maskBuffer;}; // chenfeng
+
 
 	/**
 	 * Gets the Camera Calibration. To avoid any dependencies, just as simple float / int's.
@@ -64,6 +69,7 @@ public:
 
 protected:
 	NotifyBuffer<TimestampedMat>* imageBuffer;
+	NotifyBuffer<TimestampedMat>* maskBuffer; //chenfeng
 	float fx_, fy_, cx_, cy_;
 	int width_, height_;
 };

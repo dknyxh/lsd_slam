@@ -100,16 +100,17 @@ void LiveSLAMWrapper::Loop()
 		}
 		
 		TimestampedMat image = imageStream->getBuffer()->first();
+		TimestampedMat mask = imageStream->getMaskBuffer()->first();
 		imageStream->getBuffer()->popFront();
 		
 		// process image
 		//Util::displayImage("MyVideo", image.data);
-		newImageCallback(image.data, image.timestamp);
+		newImageCallback(image.data, mask.data, image.timestamp);
 	}
 }
 
 
-void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, Timestamp imgTime)
+void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, const cv::Mat& mask, Timestamp imgTime)
 {
 	++ imageSeqNumber;
 
@@ -134,7 +135,7 @@ void LiveSLAMWrapper::newImageCallback(const cv::Mat& img, Timestamp imgTime)
 	}
 	else if(isInitialized && monoOdometry != nullptr)
 	{
-		monoOdometry->trackFrame(grayImg.data,imageSeqNumber,false,imgTime.toSec());
+		monoOdometry->trackFrame(grayImg.data, mask.data, imageSeqNumber,false,imgTime.toSec());
 	}
 }
 
