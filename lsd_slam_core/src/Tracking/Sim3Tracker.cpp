@@ -483,8 +483,7 @@ void Sim3Tracker::calcSim3Buffers(
 
 		// step 1a: coordinates have to be in image:
 		// (inverse test to exclude NANs)
-		if(!(u_new > 1 && v_new > 1 && u_new < w-2 && v_new < h-2
-			&& frame->mask(level)[int(u_new) + w * int(v_new)] == 0))
+		if(!(u_new > 1 && v_new > 1 && u_new < w-2 && v_new < h-2))
 			continue;
 
 		*(buf_warped_x+idx) = Wxp(0);
