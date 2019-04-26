@@ -40,6 +40,7 @@
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include "DataStructures/FramePoseStruct.h"
 
 std::string &ltrim(std::string &s) {
         s.erase(s.begin(), std::find_if(s.begin(), s.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
@@ -315,7 +316,33 @@ int main( int argc, char** argv )
 
 	system->finalize();
 
+// Chenfeng: Below is for outputing the poses ---------------------
+	auto poses = system->getAllPoses();
+	int N = poses.size();
+    int R = 3, C = 4;
+    int i = 0;
 
+    std::string posePath = "/media/rpl/Data/lsd_results/lsd_pose.dat";
+    std::cout << "Writing transforms to:" << posePath << "\n";
+
+    std::ofstream out;
+    out.open(posePath.c_str(), std::ios::out | std::ios::binary);
+    out.write((char*) &N, sizeof(int));
+    out.write((char*) &R, sizeof(int));
+    out.write((char*) &C, sizeof(int));
+
+    for (FramePoseStruct* pose: poses) {
+        Sim3 T = pose->getCamToWorld(10);
+        auto mat = T.matrix3x4();
+        for (int i=0; i<3; ++i) {
+            for (int j=0; j<4; ++j) {
+                double val = mat(i,j);
+                out.write((char*) &val, sizeof(double));
+            }
+        }
+    }
+    out.close();
+//----------------------------------------------------------------
 
 	delete system;
 	delete undistorter;
