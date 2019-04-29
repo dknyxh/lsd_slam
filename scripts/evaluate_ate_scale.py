@@ -96,6 +96,26 @@ def align(model,data):
         
     return rot,trans,trans_error, s
 
+def calculate_rmse(algorithm_path, associate_groundtruth_path):
+    with open(algorithm_path, 'rb') as file:
+        ba = np.array(bytearray(file.read()))
+
+    F, I, J = ba[:12].view(np.int32)
+    assert I == 3 and J == 4, "Not poses?"
+
+    T = ba[12:].view(float).reshape(F,I,J)
+
+    Rs = np.empty((F,3,3))
+    ts = np.empty((F,3))
+    for f in range(F):
+        R = T[f,:,:3]
+        s = np.linalg.norm(R[0])
+        R /= s
+        Rs[f] = R.T
+        ts[f] = -np.dot(R.T, T[f,:,3])
+
+    return Rs, ts
+
 def plot_traj(ax,stamps,traj,style,color,label):
     """
     Plot a trajectory using matplotlib. 
@@ -129,6 +149,11 @@ def plot_traj(ax,stamps,traj,style,color,label):
             
 
 if __name__=="__main__":
+    algorithm_path = "/home/rpl/ros_workspace/src/lsd_slam/scripts/data/lsd_pose.dat"
+    associate_groundtruth_path = "/media/rpl/Data/rgbd_dataset_freiburg3_sitting_xyz/associate.txt"
+    Rs, ts, data = calculate_rmse(algorithm_path, associate_groundtruth_path)
+
+
     # parse command line
     parser = argparse.ArgumentParser(description='''
     This script computes the absolute trajectory error from the ground truth trajectory and the estimated trajectory. 

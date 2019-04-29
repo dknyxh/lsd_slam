@@ -322,7 +322,7 @@ int main( int argc, char** argv )
     int R = 3, C = 4;
     int i = 0;
 
-    std::string posePath = "/media/rpl/Data/lsd_results/lsd_pose.dat";
+    std::string posePath = "/home/rpl/ros_workspace/src/lsd_slam/scripts/data/lsd_pose.dat";
     std::cout << "Writing transforms to:" << posePath << "\n";
 
     std::ofstream out;

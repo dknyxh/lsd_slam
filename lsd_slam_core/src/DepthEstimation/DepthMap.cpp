@@ -122,13 +122,13 @@ void DepthMap::observeDepthRow(int yMin, int yMax, RunningStats* stats)
 			bool hasHypothesis = target->isValid;
 
 			// ======== 1. check absolute grad =========
-			if(hasHypothesis && keyFrameMaxGradBuf[idx] < MIN_ABS_GRAD_DECREASE)
+			if(hasHypothesis && (keyFrameMaxGradBuf[idx] < MIN_ABS_GRAD_DECREASE || activeKeyFrame->mask(0)[x + width * y] == 255))
 			{
 				target->isValid = false;
 				continue;
 			}
 
-			if(keyFrameMaxGradBuf[idx] < MIN_ABS_GRAD_CREATE || target->blacklisted < MIN_BLACKLIST)
+			if(keyFrameMaxGradBuf[idx] < MIN_ABS_GRAD_CREATE || target->blacklisted < MIN_BLACKLIST || activeKeyFrame->mask(0)[x + width * y] == 255)
 				continue;
 
 
@@ -536,7 +536,7 @@ void DepthMap::propagateDepth(Frame* new_keyframe)
 			float v_new = pn[1]*new_idepth*fy + cy;
 
 			// check if still within image, if not: DROP.
-			if(!(u_new > 2.1f && v_new > 2.1f && u_new < width-3.1f && v_new < height-3.1f))
+			if(!(u_new > 2.1f && v_new > 2.1f && u_new < width-3.1f && v_new < height-3.1f && new_keyframe->mask(0)[int(u_new) + width * int(v_new)] == 0))
 			{
 				if(enablePrintDebugInfo) runningStats.num_prop_removed_out_of_bounds++;
 				continue;
@@ -893,7 +893,7 @@ void DepthMap::initializeRandomly(Frame* new_frame)
 	{
 		for(int x=1;x<width-1;x++)
 		{
-			if(maxGradients[x+y*width] > MIN_ABS_GRAD_CREATE)
+			if(maxGradients[x+y*width] > MIN_ABS_GRAD_CREATE && new_frame->mask(0)[x + y*width] == 0)
 			{
 				float idepth = 0.5f + 1.0f * ((rand() % 100001) / 100000.0f);
 				currentDepthMap[x+y*width] = DepthMapPixelHypothesis(
@@ -1124,7 +1124,7 @@ void DepthMap::updateKeyframe(std::deque< std::shared_ptr<Frame> > referenceFram
 
 
 	gettimeofday(&tv_start, NULL);
-	observeDepth();
+	observeDepth();             //? what is done in this step?
 	gettimeofday(&tv_end, NULL);
 	msObserve = 0.9*msObserve + 0.1*((tv_end.tv_sec-tv_start.tv_sec)*1000.0f + (tv_end.tv_usec-tv_start.tv_usec)/1000.0f);
 	nObserve++;
@@ -1150,7 +1150,7 @@ void DepthMap::updateKeyframe(std::deque< std::shared_ptr<Frame> > referenceFram
 	if(!activeKeyFrame->depthHasBeenUpdatedFlag)
 	{
 		gettimeofday(&tv_start, NULL);
-		activeKeyFrame->setDepth(currentDepthMap);
+		activeKeyFrame->setDepth(currentDepthMap);  // maybe modify here?
 		gettimeofday(&tv_end, NULL);
 		msSetDepth = 0.9*msSetDepth + 0.1*((tv_end.tv_sec-tv_start.tv_sec)*1000.0f + (tv_end.tv_usec-tv_start.tv_usec)/1000.0f);
 		nSetDepth++;

@@ -59,8 +59,8 @@ def main():
     y_groudtruth = data[:,1] - data[0,1]
     z_groudtruth = data[:,2] - data[0,2]
 
-    # rmse = np.sqrt(np.sum((x-x_groudtruth) * (x-x_groudtruth) + (y-y_groudtruth) * (y-y_groudtruth) + (z-z_groudtruth) * (z-z_groudtruth)) / data.shape[0])
-    # print("rmse: " + str(rmse))
+    rmse = np.sqrt(np.sum((x-x_groudtruth) * (x-x_groudtruth) + (y-y_groudtruth) * (y-y_groudtruth) + (z-z_groudtruth) * (z-z_groudtruth)) / data.shape[0])
+    print("rmse: " + str(rmse))
 
 
     # with open("/media/rpl/Data/lsd_results/original.txt", "a") as resultfile:
@@ -70,9 +70,9 @@ def main():
 
 
 
-    # ax.plot3D(x, y, z, 'green')
-    # ax.plot3D(x_groudtruth, y_groudtruth, z_groudtruth, 'red')
-    # plt.show()
+    ax.plot3D(x, y, z, 'green')
+    ax.plot3D(x_groudtruth, y_groudtruth, z_groudtruth, 'red')
+    plt.show()
 
 
 
