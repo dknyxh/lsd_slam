@@ -69,7 +69,7 @@ def main():
 
 
 
-
+    print(x.shape)
     ax.plot3D(x, y, z, 'green')
     ax.plot3D(x_groudtruth, y_groudtruth, z_groudtruth, 'red')
     plt.show()

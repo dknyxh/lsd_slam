@@ -47,6 +47,8 @@ import sys
 import numpy
 import argparse
 import associate
+from mpl_toolkits import mplot3d
+import matplotlib.pyplot as plt
 
 def align(model,data):
     """Align two trajectories using the method of Horn (closed-form).
@@ -96,26 +98,6 @@ def align(model,data):
         
     return rot,trans,trans_error, s
 
-def calculate_rmse(algorithm_path, associate_groundtruth_path):
-    with open(algorithm_path, 'rb') as file:
-        ba = np.array(bytearray(file.read()))
-
-    F, I, J = ba[:12].view(np.int32)
-    assert I == 3 and J == 4, "Not poses?"
-
-    T = ba[12:].view(float).reshape(F,I,J)
-
-    Rs = np.empty((F,3,3))
-    ts = np.empty((F,3))
-    for f in range(F):
-        R = T[f,:,:3]
-        s = np.linalg.norm(R[0])
-        R /= s
-        Rs[f] = R.T
-        ts[f] = -np.dot(R.T, T[f,:,3])
-
-    return Rs, ts
-
 def plot_traj(ax,stamps,traj,style,color,label):
     """
     Plot a trajectory using matplotlib. 
@@ -149,11 +131,6 @@ def plot_traj(ax,stamps,traj,style,color,label):
             
 
 if __name__=="__main__":
-    algorithm_path = "/home/rpl/ros_workspace/src/lsd_slam/scripts/data/lsd_pose.dat"
-    associate_groundtruth_path = "/media/rpl/Data/rgbd_dataset_freiburg3_sitting_xyz/associate.txt"
-    Rs, ts, data = calculate_rmse(algorithm_path, associate_groundtruth_path)
-
-
     # parse command line
     parser = argparse.ArgumentParser(description='''
     This script computes the absolute trajectory error from the ground truth trajectory and the estimated trajectory. 
@@ -218,6 +195,7 @@ if __name__=="__main__":
         file.close()
 
     if args.plot:
+        ### Original plot ########
         import matplotlib
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
@@ -228,18 +206,23 @@ if __name__=="__main__":
         plot_traj(ax,first_stamps,first_xyz_full.transpose().A,'-',"black","ground truth")
         plot_traj(ax,second_stamps,second_xyz_full_aligned.transpose().A,'-',"blue","estimated")
 
-        label="difference"
-        for (a,b),(x1,y1,z1),(x2,y2,z2) in zip(matches,first_xyz.transpose().A,second_xyz_aligned.transpose().A):
-            ax.plot([x1,x2],[y1,y2],'-',color="red",label=label)
-            label=""
+        # label="difference"
+        # for (a,b),(x1,y1,z1),(x2,y2,z2) in zip(matches,first_xyz.transpose().A,second_xyz_aligned.transpose().A):
+        #     ax.plot([x1,x2],[y1,y2],'-',color="red",label=label)
+        #     label=""
             
         ax.legend()
             
         ax.set_xlabel('x [m]')
         ax.set_ylabel('y [m]')
         plt.savefig(args.plot,dpi=90)
+        #######################################
+        # fig = plt.figure()
+        # ax = plt.axes(projection='3d')
+        # print(second_xyz_full_aligned.shape)
+        # ax.plot3D(first_xyz[0,:30].squeeze(), first_xyz[1,:30].squeeze(), first_xyz[2,:30].squeeze(), 'green')
+        # ax.plot3D(second_xyz_full_aligned[0,:30].squeeze(), second_xyz_full_aligned[1,:30].squeeze(), second_xyz_full_aligned[2,:30].squeeze(), 'red')
+        # plt.show()
 
-    # with open("/media/rpl/Data/lsd_results/original.txt", "a") as resultfile:
-    #     resultfile.write(str(rmse)+"\n")
-    # resultfile.close()
-        
+        numpy.savez("./forplt.npz",x=first_xyz_full,y=second_xyz_full_aligned)
+
