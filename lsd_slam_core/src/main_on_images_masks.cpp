@@ -29,6 +29,7 @@
 #include <fstream>
 #include <dirent.h>
 #include <algorithm>
+#include <stdio.h>
 
 #include "IOWrapper/ROS/ROSOutput3DWrapper.h"
 #include "IOWrapper/ROS/rosReconfigure.h"
@@ -41,6 +42,43 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include "DataStructures/FramePoseStruct.h"
+#include <Eigen/Core>
+
+std::vector<double> calculateRotation(const Eigen::Matrix<double,3,4> & R) {
+
+  double w=0, x=0, y=0, z=0;
+  double trace = R(0,0) + R(1,1) + R(2,2); // I removed + 1.0f; see discussion with Ethan
+  if( trace > 0 ) {// I changed M_EPSILON to 0
+    double s = 0.5f / sqrtf(trace+ 1.0f);
+    w = 0.25f / s;
+    x = ( R(2,1) - R(1,2) ) * s;
+    y = ( R(0,2) - R(2,0) ) * s;
+    z = ( R(1,0) - R(0,1) ) * s;
+  } else {
+    if ( R(0,0) > R(1,1) && R(0,0) > R(2,2) ) {
+      double s = 2.0f * sqrtf( 1.0f + R(0,0) - R(1,1) - R(2,2));
+      w = (R(2,1) - R(1,2) ) / s;
+      x = 0.25f * s;
+      y = (R(0,1) + R(1,0) ) / s;
+      z = (R(0,2) + R(2,0) ) / s;
+    } else if (R(1,1) > R(2,2)) {
+      double s = 2.0f * sqrtf( 1.0f + R(1,1) - R(0,0) - R(2,2));
+      w = (R(0,2) - R(2,0) ) / s;
+      x = (R(0,1) + R(1,0) ) / s;
+      y = 0.25f * s;
+      z = (R(1,2) + R(2,1) ) / s;
+    } else {
+      double s = 2.0f * sqrtf( 1.0f + R(2,2) - R(0,0) - R(1,1) );
+      w = (R(1,0) - R(0,1) ) / s;
+      x = (R(0,2) + R(2,0) ) / s;
+      y = (R(1,2) + R(2,1) ) / s;
+      z = 0.25f * s;
+    }
+  }
+  std::vector<double> return_vec = {R(0,3), R(1,3), R(2,3), x, y, z, w};
+  return return_vec;
+}
+
 
 std::string &ltrim(std::string &s) {
         s.erase(s.begin(), std::find_if(s.begin(), s.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
@@ -320,28 +358,47 @@ int main( int argc, char** argv )
 	auto poses = system->getAllPoses();
 	int N = poses.size();
     int R = 3, C = 4;
-    int i = 0;
+    
 
-    std::string posePath = "./src/lsd_slam/scripts/data/lsd_pose.dat";
-    std::cout << "Writing transforms to:" << posePath << "\n";
+    // std::string posePath = "./src/lsd_slam/scripts/data/lsd_pose.dat";
+    // std::cout << "Writing transforms to:" << posePath << "\n";
 
-    std::ofstream out;
-    out.open(posePath.c_str(), std::ios::out | std::ios::binary);
-    out.write((char*) &N, sizeof(int));
-    out.write((char*) &R, sizeof(int));
-    out.write((char*) &C, sizeof(int));
+    // std::ofstream out;
+    // out.open(posePath.c_str(), std::ios::out | std::ios::binary);
+    // out.write((char*) &N, sizeof(int));
+    // out.write((char*) &R, sizeof(int));
+    // out.write((char*) &C, sizeof(int));
+    std::string trajectory_path = "./trajectory.txt" ;
+    FILE * fp = fopen(trajectory_path.c_str(), "w");
 
+    assert(N == files.size());
+    int k = 0;
     for (FramePoseStruct* pose: poses) {
-        Sim3 T = pose->getCamToWorld(10);
+        Sim3 T = pose->getCamToWorld();
         auto mat = T.matrix3x4();
-        for (int i=0; i<3; ++i) {
-            for (int j=0; j<4; ++j) {
-                double val = mat(i,j);
-                out.write((char*) &val, sizeof(double));
-            }
-        }
+
+        std::vector<double> q = calculateRotation(mat);
+
+        auto location = files[k].rfind("/");
+        std::string timestamp = files[k].substr(location+1, files[k].size());
+        timestamp = timestamp.substr(0, timestamp.size() - 4);
+
+        fprintf(fp, "%s ", timestamp.c_str());
+        for (int i=0; i < q.size(); i++){
+          fprintf(fp, "%f ", q[i]);
+		}
+		fprintf(fp, "\n");
+
+		k++;
+        // out.write()
+        // for (int i=0; i<3; ++i) {
+        //     for (int j=0; j<4; ++j) {
+        //         double val = mat(i,j);
+        //         out.write((char*) &val, sizeof(double));
+        //     }
+        // }
     }
-    out.close();
+	fclose(fp);
 //----------------------------------------------------------------
 
 	delete system;
@@ -349,3 +406,4 @@ int main( int argc, char** argv )
 	delete outputWrapper;
 	return 0;
 }
+
