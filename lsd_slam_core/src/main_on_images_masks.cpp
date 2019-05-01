@@ -368,7 +368,13 @@ int main( int argc, char** argv )
     // out.write((char*) &N, sizeof(int));
     // out.write((char*) &R, sizeof(int));
     // out.write((char*) &C, sizeof(int));
-    std::string trajectory_path = "./trajectory.txt" ;
+
+    std::string trajectory_path;
+    if(!ros::param::get("~trajectory", trajectory_path)){
+    	trajectory_path = "./trajectory.txt" ;
+    }
+    ros::param::del("~trajectory");
+
     FILE * fp = fopen(trajectory_path.c_str(), "w");
 
     assert(N == files.size());
